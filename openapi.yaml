@@ -1,0 +1,2048 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: yann.prono@telecomnancy.net
+  description: Public API for Streamlabs
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Streamlabs
+  version: 1.0.0
+externalDocs:
+  url: https://dev.streamlabs.com/
+servers:
+  - description: OpenAPI definitions of Streamlabs API
+    url: https://streamlabs.com/api/v1.0
+tags:
+  - name: alert profiles
+    description: Find out more about alert profiles
+    externalDocs:
+      url: https://streamlabs.com/content-hub/post/introducing-alert-profiles
+  - name: alerts
+    externalDocs:
+      url: https://streamlabs.com/obs-widgets/alert-box
+  - name: authentication
+    externalDocs:
+      url: https://dev.streamlabs.com/reference#authorize
+  - name: credits
+    externalDocs:
+      url: https://streamlabs.com/content-hub/post/the-credits-widget
+  - name: donations
+    externalDocs:
+      url: https://streamlabs.com/donations
+  - name: jar
+    description: Everything about jar
+    externalDocs:
+      url: https://streamlabs.com/obs-widgets/tip-jar
+  - name: media share
+    externalDocs:
+      description: Find out more about media share
+      url: https://streamlabs.com/obs-widgets/media-share
+  - name: other
+  - name: points
+    externalDocs:
+      url: https://streamlabs.com/content-hub/post/cloudbot-101-loyalty-store
+  - name: sockets
+    externalDocs:
+      url: https://dev.streamlabs.com/docs/socket-api
+  - name: users
+    externalDocs:
+      description: Find out more about users
+      url: https://dev.streamlabs.com/reference#user
+  - name: wheel
+    description: Find out more about wheel
+    externalDocs:
+      url: https://streamlabs.com/obs-widgets/spin-wheel
+paths:
+  /authorize:
+    get:
+      description:
+        In order to acquire an `access_token` for a user, you'll need to
+        send them to this endpoint in order to approve your application. Learn more
+        about connecting to an account here.
+      operationId: Authorize
+      parameters:
+        - description:
+            Whether the endpoint returns an authorization code. For web applications,
+            a value of code should be used.
+          explode: true
+          in: query
+          name: response_type
+          required: true
+          schema:
+            type: string
+          style: form
+        - description: The client_id of your application.
+          explode: true
+          in: query
+          name: client_id
+          required: true
+          schema:
+            $ref: "#/components/schemas/ClientId"
+          style: form
+        - description: A URI where the response will be redirected.
+          example: https://app.swaggerhub.com/oauth2_redirect
+          explode: true
+          in: query
+          name: redirect_uri
+          required: true
+          schema:
+            $ref: "#/components/schemas/RedirectUri"
+          style: form
+        - description: A space-separated list of scopes.
+          example: alerts.create
+          explode: true
+          in: query
+          name: scope
+          required: true
+          schema:
+            type: string
+          style: form
+        - description:
+            An arbitrary string value we will pass back to you, useful for
+            CSRF protection.
+          explode: true
+          in: query
+          name: state
+          required: false
+          schema:
+            type: string
+          style: form
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      tags:
+        - authentication
+  /token:
+    post:
+      description:
+        Once a user has given approval from the /authorize endpoint, use
+        this endpoint to receive an `access_token`.
+      operationId: Token
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      tags:
+        - authentication
+  /user:
+    get:
+      description:
+        Fetch donations for the authenticated user. Results are ordered
+        by creation date, descending.
+      operationId: getUser
+      parameters:
+        - $ref: "#/components/parameters/AccessToken"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2: []
+      tags:
+        - users
+  /donations:
+    get:
+      description: Retrieve the list of donations
+      operationId: getDonations
+      parameters:
+        - $ref: "#/components/parameters/AccessToken"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationsList"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - donations.read
+      tags:
+        - donations
+    post:
+      description: Create a donation for the authenticated user.
+      operationId: CreateDonation
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/DonationRequest"
+        description: A object containing donation information
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - donations.create
+      tags:
+        - donations
+  /alerts:
+    post:
+      description: Trigger a custom alert for the authenticated user.
+      operationId: TriggerAlert
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AlertRequest"
+        description: A object containing alert information
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.create
+      tags:
+        - alerts
+  /alerts/skip:
+    post:
+      description: skip alerts
+      operationId: SkipAlerts
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/mute_volume:
+    post:
+      description: Mute volume
+      operationId: MuteVolume
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/unmute_volume:
+    post:
+      description: Unmute volume
+      operationId: UnmuteVolume
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/pause_queue:
+    post:
+      description: Pause alerts
+      operationId: PauseAlerts
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/unpause_queue:
+    post:
+      description: Unpause alerts
+      operationId: UnpauseAlerts
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/send_test_alert:
+    post:
+      description: Unpause alerts
+      operationId: SendTestAlert
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/TestAlertRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/show_video:
+    post:
+      description: show media sharing video
+      operationId: ShowVideo
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /alerts/hide_video:
+    post:
+      description: hide media sharing video
+      operationId: HideVideo
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - alerts.write
+      tags:
+        - alerts
+  /socket/token:
+    get:
+      description:
+        Allows you to obtain a token which can be used to listen to user's
+        event through sockets.
+      operationId: SocketToken
+      parameters:
+        - $ref: "#/components/parameters/AccessToken"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocketToken"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - socket.token
+      tags:
+        - sockets
+  /legacy/token:
+    get:
+      description:
+        Allows you to obtain a users legacy Streamlabs token which can
+        be used in widget URLs.
+      operationId: LegacySocketToken
+      parameters:
+        - $ref: "#/components/parameters/AccessToken"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegacyToken"
+          description: The response from /legacy/token
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - legacy.token
+      tags:
+        - other
+  /points:
+    get:
+      description: Get the number of points of the username
+      operationId: GetPoints
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+        - description: username of the user
+          explode: true
+          in: query
+          name: username
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+          style: form
+        - $ref: '#/components/parameters/Channel'
+      responses:
+        "200":
+          $ref: "#/components/responses/Point"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.read
+      tags:
+        - points
+  /points/subtract:
+    post:
+      description: Subtract user's loyalty points
+      operationId: SubtractPoints
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/SubstractPoints"
+      responses:
+        "200":
+          $ref: "#/components/responses/Point"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.write
+      tags:
+        - points
+  /points/import:
+    post:
+      description: mass add points to users
+      operationId: ImportPoints
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            encoding:
+              users:
+                explode: true
+                style: deepObject
+            schema:
+              $ref: "#/components/schemas/ImportPointsRequest"
+        description: mass add points to users
+      responses:
+        "200":
+          $ref: "#/components/responses/ImportedPoints"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.write
+      tags:
+        - points
+  /points/add_to_all:
+    post:
+      description: Add points to all users in the channel
+      operationId: AddToAll
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AddToAllRequest"
+        description: /points/add_to_all
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PointsAddedToUsers"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.write
+      tags:
+        - points
+  /points/user_point_edit:
+    post:
+      description: Edit points by username in a given channel
+      operationId: EditUserPoints
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/UserEditPointsRequest"
+        description: /points/user_point_edit
+      responses:
+        "200":
+          $ref: "#/components/responses/Point"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.write
+      tags:
+        - points
+  /points/group_get_points:
+    post:
+      description: batch get points
+      operationId: BatchGetPoints
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/BatchSubstractPointsRequest"
+        description: batch subtract points
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Point"
+                type: array
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      tags:
+        - points
+  /points/group_subtract_points:
+    post:
+      description: batch subtract points
+      operationId: BatchSubstractPoints
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/BatchSubstractPointsRequest"
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2:
+            - points.write
+      tags:
+        - points
+  /points/user_points:
+    get:
+      description:
+        grab a 100 users sort by points/time_watched; search query based
+        on a partial name
+      operationId: GetUserPoints
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+        - description: username of the user
+          explode: true
+          in: query
+          name: username
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+          style: form
+        - description:
+            The value of sort can be username/points/time_watched . time_watched
+            is in seconds
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: asc/desc
+          explode: true
+          in: query
+          name: order
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: the quantity of the users you will get. should be in range 1-100
+          explode: true
+          in: query
+          name: limit
+          required: false
+          schema:
+            maximum: 100
+            minimum: 1
+            type: integer
+          style: form
+        - description: which page we are on
+          explode: true
+          in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankPoints"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2: []
+      tags:
+        - points
+  /points/reset:
+    post:
+      description: reset points of all users in the channel
+      operationId: ResetPoints
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetPoints"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/LoyaltyPointsSpecialApproval"
+      security:
+        - oauth2: []
+      tags:
+        - points
+  /alert_profiles/get:
+    get:
+      description: roll credits
+      operationId: GetAlertProfiles
+      parameters:
+        - $ref: '#/components/parameters/AccessToken'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertProfile"
+          description: Success
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - profiles.write
+      tags:
+        - alert profiles
+  /alert_profiles/activate:
+    post:
+      description: Activate an alert profile
+      operationId: ActivateAlertProfiles
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ActivateAlertProfilesRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnknownAlertProfile"
+          description: The Loyalty points API, requires special approval
+      security:
+        - oauth2:
+            - profiles.write
+      tags:
+        - alert profiles
+  /credits/roll:
+    post:
+      description: roll credits
+      operationId: RollCredits
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorCredit"
+          description: Unprocessable Entity
+      security:
+        - oauth2:
+            - credits.write
+      tags:
+        - credits
+  /jar/empty:
+    post:
+      description: empty jar
+      operationId: EmptyJar
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - jar.write
+      tags:
+        - jar
+  /wheel/spin:
+    post:
+      description: spin the wheel
+      operationId: SpinWheel
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - wheel.write
+      tags:
+        - wheel
+  /media-share/play-media:
+    put:
+      description: Play the media on the media share widget
+      operationId: PlayMedia
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/pause-media:
+    put:
+      description: Pause the media on the media share widget
+      operationId: PauseMedia
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/volume-up:
+    put:
+      description: Increase the volume of the media share widget by 1
+      operationId: VolumeUp
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ChangeVolumeRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/volume-down:
+    put:
+      description: Decrease the volume of the media share widget by 1
+      operationId: VolumeDown
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/ChangeVolumeRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/skip-video:
+    put:
+      description: Skip to next video
+      operationId: SkipVideo
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/playback-video:
+    put:
+      description:
+        Seek the time to 0 on current video otherwise play the previous
+        video
+      operationId: PlaybackVideo
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/enable-requests:
+    patch:
+      description: Enable requests to accept new media
+      operationId: EnableRequests
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/disable-requests:
+    patch:
+      description: Disable requests to accept new media
+      operationId: DisableRequests
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/enable-autoshow:
+    patch:
+      description: Enable auto show for playing media
+      operationId: EnableAutoshow
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/disable-autoshow:
+    patch:
+      description: Disable auto show for playing media
+      operationId: DisableAutoshow
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/enable-autoplay:
+    patch:
+      description: Enable autoplay for queued media
+      operationId: EnableAutoplay
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/disable-autoplay:
+    patch:
+      description: Disable autoplay for queued media
+      operationId: DisableAutoplay
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/enable-moderation:
+    patch:
+      description: Enable moderation for incoming media
+      operationId: EnableModeration
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/disable-moderation:
+    patch:
+      description: Disable moderation for incoming media
+      operationId: DisableModeration
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/enable-backup-playlist:
+    patch:
+      description: Enable playing from backup playlist
+      operationId: EnableBackupPlaylist
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+  /media-share/disable-backup-playlist:
+    patch:
+      description: Disable playing from backup playlist
+      operationId: DisableBackupPlaylist
+      requestBody:
+        $ref: "#/components/requestBodies/AccessToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "400":
+          description: Bad request
+        "401":
+          description: Access denied
+      security:
+        - oauth2:
+            - mediashare.control
+      tags:
+        - media share
+components:
+  parameters:
+    AccessToken:
+      description: Access token allows you to access a users' Streamlabs data.
+      explode: true
+      in: query
+      name: access_token
+      required: false
+      schema:
+        type: string
+      style: form
+    Username:
+      description: username of the user
+      explode: true
+      in: query
+      name: username
+      required: true
+      schema:
+        $ref: "#/components/schemas/Username"
+      style: form
+    Channel:
+      description: channel name e.g. iddqd
+      explode: true
+      in: query
+      name: channel
+      required: true
+      schema:
+        $ref: "#/components/schemas/Channel"
+      style: form
+    RedirectUri:
+      description: A URI where the response will be redirected.
+      example: https://app.swaggerhub.com/oauth2_redirect
+      explode: true
+      in: query
+      name: redirect_uri
+      required: true
+      schema:
+        $ref: "#/components/schemas/RedirectUri"
+      style: form
+    ResponseType:
+      description:
+        Whether the endpoint returns an authorization code. For web applications,
+        a value of code should be used.
+      explode: true
+      in: query
+      name: response_type
+      required: true
+      schema:
+        type: string
+      style: form
+    ClientId:
+      description: The client_id of your application.
+      explode: true
+      in: query
+      name: client_id
+      required: true
+      schema:
+        $ref: "#/components/schemas/ClientId"
+      style: form
+    Scope:
+      description: A space-separated list of scopes.
+      example: alerts.create
+      explode: true
+      in: query
+      name: scope
+      required: true
+      schema:
+        type: string
+      style: form
+    State:
+      description:
+        An arbitrary string value we will pass back to you, useful for
+        CSRF protection.
+      explode: true
+      in: query
+      name: state
+      required: false
+      schema:
+        type: string
+      style: form
+  requestBodies:
+    SubstractPoints:
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            $ref: "#/components/schemas/SubstractPoints"
+    AccessToken:
+      description: The access token
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            $ref: "#/components/schemas/AccessToken"
+  responses:
+    LoyaltyPointsSpecialApproval:
+      description: The Loyalty points API, requires special approval
+      content:
+        application/json:
+          schema:
+            type: string
+    Donation:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Donation"
+      description: Success
+    ImportedPoints:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ImportedPoints"
+    PointsAddedToPlayers:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PointsAddedToUsers"
+      description: Success
+    SocketToken:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SocketToken"
+      description: Success
+    AlertProfile:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AlertProfile"
+      description: Success
+    Success:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Success"
+      description: Success
+    BadRequest:
+      description: Bad request
+    AccessDenied:
+      description: Access denied
+    SpecialApproval:
+      content:
+        application/json:
+          schema:
+            type: string
+      description: The Loyalty points API, requires special approval
+    AlertProfileNotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnknownAlertProfile"
+      description: The Loyalty points API, requires special approval
+    Point:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Point"
+      description: a point
+    LegacyToken:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LegacyToken"
+      description: The response from /legacy/token
+  schemas:
+    UnknownAlertProfile:
+      properties:
+        success:
+          enum:
+            - false
+          type: boolean
+        message:
+          type: string
+      required:
+        - message
+        - success
+      type: object
+    PointsAddedToUsers:
+      example:
+        message: message
+        users:
+          - users
+          - users
+      properties:
+        message:
+          type: string
+        users:
+          items:
+            type: string
+          type: array
+      type: object
+    Token:
+      additionalProperties: false
+      example:
+        access_token: access_token
+        refresh_token: refresh_token
+        token_type: token_type
+      properties:
+        access_token:
+          description: Access token allows you to access a users' Streamlabs data.
+          nullable: true
+          type: string
+        token_type:
+          type: string
+        refresh_token:
+          type: string
+      type: object
+    DonationsList:
+      example:
+        data:
+          - amount: amount
+            name: name
+            created_at: 6
+            currency: currency
+            message: message
+            donation_id: 0
+            email: email
+          - amount: amount
+            name: name
+            created_at: 6
+            currency: currency
+            message: message
+            donation_id: 0
+            email: email
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Donation"
+          type: array
+      type: object
+    ActivateAlertProfilesRequest:
+      additionalProperties: false
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        id:
+          type: string
+      required:
+        - id
+      type: object
+    TestAlertRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        platform:
+          $ref: "#/components/schemas/Platform"
+        type:
+          $ref: "#/components/schemas/AlertType"
+    DonationRequest:
+      additionalProperties: false
+      properties:
+        name:
+          description:
+            The name of the donor. has to be between 2-25 chars and can
+            only be alphanumeric + underscores
+          example: Kevin Parker
+          maxLength: 25
+          minLength: 2
+          type: string
+        message:
+          description: The message from the donor. must be < 255 characters.
+          example: I Like your show 👍
+          maxLength: 254
+          type: string
+        identifier:
+          description:
+            An identifier for this donor, which is used to group donations
+            with the same donor. For example, if you create more than one donation
+            with the same identifier, they will be grouped together as if they came
+            from the same donor. Typically this is best suited as an email address,
+            or a unique hash.
+          example: kevin.parker
+          type: string
+        amount:
+          description: The amount of this donation.
+          example: 4.5
+          type: number
+        currency:
+          description:
+            The 3 letter currency code for this donation. Must be one of
+            the supported currency codes.
+          example: USD
+          pattern: "[A-Z]{3}"
+          type: string
+        created_at:
+          description:
+            A timestamp that identifies when this donation was made. If
+            left blank, it will default to now.
+          example: 01/31/2021 11:01 AM
+          pattern:
+            (0[1-9]|1[012])\/(0[1-9]|[12][0-9]|3[01])\/(19|20)\d\d ([0-1]?[0-9]|2[0-3]):[0-5][0-9]
+            [apAP][mM]
+          type: string
+        skip_alert:
+          description: Set it to "yes" if you need to skip the alert
+          enum:
+            - "true"
+            - "false"
+          example: "false"
+          type: string
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+      required:
+        - amount
+        - currency
+        - identifier
+        - name
+      type: object
+    AlertType:
+      type: string
+      example: donation
+      enum: [follow, subscription, donation, host]
+    AlertRequest:
+      additionalProperties: false
+      properties:
+        type:
+          $ref: "#/components/schemas/AlertType"
+        image_href:
+          description:
+            The href pointing to an image resource to play when this alert
+            shows. If an empty string is supplied, default image will be displayed.
+          example: https://media.giphy.com/media/VJScpfdeSNwuPdCL0W/giphy.gif
+          format: uri
+          type: string
+        sound_href:
+          description:
+            The href pointing to a sound resource to play when this alert
+            shows. If an empty string is supplied, default sound will be played.
+          format: uri
+          type: string
+        message:
+          description:
+            "The message to show with this alert. If not supplied, no message
+            will be shown. Surround special tokens with s, for example: This is my
+            special* alert!"
+          example: "*Julian* donated *$6*"
+          type: string
+        user_message:
+          description: Acting as the second heading, this shows below message.
+          example: What a cut livestream!
+          type: string
+        duration:
+          description:
+            "How many seconds this alert should be displayed. Value should
+            be in milliseconds.Ex: 1000 for 1 second."
+          type: number
+        special_text_color:
+          description:
+            The color to use for special tokens. Must be a valid CSS color
+            string.
+          example: hsl(168, 59%, 48%)
+          type: string
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+      required:
+        - type
+      type: object
+    ChangeVolumeRequest:
+      additionalProperties: false
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        volume:
+          type: integer
+      type: object
+    UserEditPointsRequest:
+      additionalProperties: false
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        username:
+          $ref: "#/components/schemas/Username"
+        points:
+          type: integer
+      required:
+        - message
+        - points
+        - username
+      type: object
+    AddToAllRequest:
+      additionalProperties: false
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        value:
+          description: points to be added
+          example: 0
+          minimum: 0
+          type: integer
+      required:
+        - channel
+        - value
+      type: object
+    BatchSubstractPointsRequest:
+      additionalProperties: false
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        users:
+          description: points to be added
+          type: integer
+      required:
+        - channel
+        - users
+      type: object
+    TokenRequest:
+      additionalProperties: false
+      properties:
+        grant_type:
+          $ref: "#/components/schemas/GrantType"
+        client_id:
+          $ref: "#/components/schemas/ClientId"
+        client_secret:
+          $ref: "#/components/schemas/ClientSecret"
+        redirect_uri:
+          $ref: "#/components/schemas/RedirectUri"
+        code:
+          $ref: "#/components/schemas/Code"
+        refresh_token:
+          $ref: "#/components/schemas/RefreshToken"
+      required:
+        - client_id
+        - client_secret
+        - grant_type
+        - redirect_uri
+        - refresh_token
+      type: object
+    Platform:
+      description: can be either twitch or youtube
+      enum:
+        - twitch
+        - youtube
+      example: twitch
+      type: string
+    Code:
+      description:
+        The code received from an /authorize response. Required if grant_type
+        is authorization_code.
+      type: string
+    RefreshToken:
+      description:
+        The refresh_token received from a previous /token response. Required
+        if grant_type is refresh_token.
+      type: string
+    GrantType:
+      description:
+        The grant type of this request. Will be authorization_code or refresh_token
+        depending on which is accompanying this request.
+      example: grant_type
+      type: string
+    ClientId:
+      description: The client_id of your application.
+      type: string
+    ClientSecret:
+      description: The client_secret of your application.
+      type: string
+    RedirectUri:
+      description: The redirect_uri of your application.
+      type: string
+    AccessToken:
+      description: Access token allows you to access a users' Streamlabs data.
+      nullable: true
+      type: string
+    RankPoints:
+      additionalProperties: false
+      description: rank
+      example:
+        per_page: 6
+        total: 0
+        data:
+          - time_watched: 7
+            username: username
+            points: 9
+          - time_watched: 7
+            username: username
+            points: 9
+        last_page: 5
+        from: 2
+        to: 5
+        current_page: 1
+      properties:
+        total:
+          type: integer
+        per_page:
+          type: integer
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        to:
+          type: integer
+        from:
+          type: integer
+        data:
+          items:
+            $ref: "#/components/schemas/PartialUser"
+          type: array
+      type: object
+    PartialUser:
+      additionalProperties: false
+      example:
+        time_watched: 7
+        username: username
+        points: 9
+      properties:
+        username:
+          description: username of the user
+          type: string
+        time_watched:
+          type: integer
+        points:
+          type: integer
+      type: object
+    Username:
+      description: username of the user
+      type: string
+    Channel:
+      description: channel name e.g. iddqd
+      type: string
+    ImportPointsRequest:
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        users:
+          description: the points you want to subtract from the user
+          example: users[username1]=10&users[username2]=20
+          type: string
+      required:
+        - channel
+        - username
+      type: object
+    ResetPoints:
+      additionalProperties: false
+      description: An alert profile
+      example:
+        data: data
+        error: true
+        message: message
+      properties:
+        data:
+          type: string
+        error:
+          type: boolean
+        message:
+          type: string
+      type: object
+    AlertProfile:
+      additionalProperties: false
+      description: An alert profile
+      example:
+        scene_collections:
+          - updated_at: updated_at
+            user_id: 3
+            last_updated_at: 2000-01-23T04:56:07.000+00:00
+            alert_profile_id: 4.145608029883936
+            name: name
+            active: 2.027123023002322
+            created_at: created_at
+            id: 9
+          - updated_at: updated_at
+            user_id: 3
+            last_updated_at: 2000-01-23T04:56:07.000+00:00
+            alert_profile_id: 4.145608029883936
+            name: name
+            active: 2.027123023002322
+            created_at: created_at
+            id: 9
+        active_profile_key: 6
+        profiles:
+          - widget_theme_id: 5
+            user_id: 5
+            name: name
+            description: description
+            active: 2
+            id: 1
+          - widget_theme_id: 5
+            user_id: 5
+            name: name
+            description: description
+            active: 2
+            id: 1
+        profiles_list:
+          - name: name
+            key: 7
+          - name: name
+            key: 7
+        active_profile: 0
+      properties:
+        active_profile:
+          type: integer
+        active_profile_key:
+          type: integer
+        profiles:
+          items:
+            $ref: "#/components/schemas/Profile"
+          type: array
+        profiles_list:
+          items:
+            $ref: "#/components/schemas/AlertProfile_profiles_list"
+          type: array
+        scene_collections:
+          items:
+            $ref: "#/components/schemas/Scene"
+          type: array
+      type: object
+    Scene:
+      additionalProperties: false
+      example:
+        updated_at: updated_at
+        user_id: 3
+        last_updated_at: 2000-01-23T04:56:07.000+00:00
+        alert_profile_id: 4.145608029883936
+        name: name
+        active: 2.027123023002322
+        created_at: created_at
+        id: 9
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        name:
+          type: string
+        active:
+          type: number
+        alert_profile_id:
+          type: number
+        last_updated_at:
+          format: date-time
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - active
+        - alert_profile_id
+        - created_at
+        - id
+        - last_updated_at
+        - name
+        - updated_at
+        - user_id
+      type: object
+    Profile:
+      additionalProperties: false
+      description: A profile
+      example:
+        widget_theme_id: 5
+        user_id: 5
+        name: name
+        description: description
+        active: 2
+        id: 1
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        user_id:
+          type: integer
+        widget_theme_id:
+          type: integer
+        active:
+          type: integer
+      required:
+        - description
+        - id
+        - name
+      type: object
+    Point:
+      additionalProperties: false
+      description: A point
+      example:
+        time_watched: 0
+        updated_at: 2000-01-23
+        channel: channel
+        created_at: 2000-01-23
+        id: 0
+        exp: 0
+        ta_id: ta_id
+        platform: twitch
+        username: username
+        points: 0
+        status: status
+      properties:
+        id:
+          type: integer
+        platform:
+          $ref: "#/components/schemas/Platform"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        username:
+          description: username of the user
+          type: string
+        exp:
+          minimum: 0
+          type: integer
+        points:
+          minimum: 0
+          type: integer
+        ta_id:
+          nullable: true
+          type: string
+        status:
+          type: string
+        time_watched:
+          minimum: 0
+          type: integer
+        created_at:
+          format: date
+          nullable: true
+          type: string
+        updated_at:
+          format: date
+          type: string
+      type: object
+    Streamlabs:
+      additionalProperties: false
+      example:
+        id: 0
+        display_name: display_name
+      properties:
+        id:
+          type: integer
+        display_name:
+          type: string
+      type: object
+    Twitch:
+      additionalProperties: false
+      example:
+        icon_url: icon_url
+        name: name
+        id: 6
+        display_name: display_name
+      properties:
+        id:
+          type: integer
+        display_name:
+          type: string
+        icon_url:
+          type: string
+        name:
+          type: string
+      type: object
+    Youtube:
+      additionalProperties: false
+      example:
+        id: id
+        title: title
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+      type: object
+    Mixer:
+      additionalProperties: false
+      example:
+        name: name
+        id: 1
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      type: object
+    Facebook:
+      additionalProperties: false
+      example:
+        name: name
+        id: id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    User:
+      additionalProperties: false
+      example:
+        streamlabs:
+          id: 0
+          display_name: display_name
+        twitch:
+          icon_url: icon_url
+          name: name
+          id: 6
+          display_name: display_name
+        facebook:
+          name: name
+          id: id
+        Youtube:
+          id: id
+          title: title
+        mixer:
+          name: name
+          id: 1
+      properties:
+        streamlabs:
+          $ref: "#/components/schemas/Streamlabs"
+        twitch:
+          $ref: "#/components/schemas/Twitch"
+        Youtube:
+          $ref: "#/components/schemas/Youtube"
+        mixer:
+          $ref: "#/components/schemas/Mixer"
+        facebook:
+          $ref: "#/components/schemas/Facebook"
+      type: object
+    SocketToken:
+      additionalProperties: false
+      example:
+        socket_token: socket_token
+      properties:
+        socket_token:
+          type: string
+      required:
+        - socket_token
+      type: object
+    Donation:
+      additionalProperties: false
+      example:
+        amount: amount
+        name: name
+        created_at: 6
+        currency: currency
+        message: message
+        donation_id: 0
+        email: email
+      properties:
+        donation_id:
+          type: integer
+        created_at:
+          type: integer
+        currency:
+          type: string
+        amount:
+          type: string
+        name:
+          type: string
+        message:
+          type: string
+        email:
+          type: string
+      required:
+        - donation_id
+      type: object
+    ErrorCredit:
+      additionalProperties: false
+      properties:
+        error:
+          type: boolean
+        code:
+          type: integer
+        message:
+          type: string
+      type: object
+    Success:
+      additionalProperties: false
+      example:
+        success: true
+      properties:
+        success:
+          type: boolean
+      type: object
+    LegacyToken:
+      additionalProperties: false
+      example:
+        token: token
+      properties:
+        token:
+          type: string
+      required:
+        - token
+      type: object
+    SubstractPoints:
+      properties:
+        access_token:
+          $ref: "#/components/schemas/AccessToken"
+        username:
+          $ref: "#/components/schemas/Username"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        points:
+          description: the points you want to subtract from the user'
+          minimum: 0
+          type: integer
+      required:
+        - channel
+        - points
+        - username
+      type: object
+    AlertProfile_profiles_list:
+      example:
+        name: name
+        key: 7
+      properties:
+        name:
+          type: string
+        key:
+          type: integer
+      required:
+        - key
+        - name
+      type: object
+    ImportedPoints:
+      type: object
+      additionalProperties: false
+      properties:
+        message:
+          type: string
+          example: Sucess
+        users:
+          type: integer
+  securitySchemes:
+    oauth2:
+      description: This API uses OAuth 2 with the implicit grant flow. [More info](https://dev.streamlabs.com/docs/oauth-2)
+      flows:
+        authorizationCode:
+          authorizationUrl: /api/v1.0/authorize?grant_type=grant_type
+          scopes:
+            donations.create: POST /donations
+            donations.read: GET /donations
+            alerts.create: POST /alerts
+            legacy.token: GET /legacy/token
+            socket.token: GET /socket/token
+            points.read: GET /points
+            points.write: POST /points/subtract POST /points/import POST /points/add_to_all
+            alerts.write:
+              POST "/alerts/skip POST /alerts/mute_volume POST /alerts/unmute_volume
+              POST /alerts/pause_queue POST /alerts/unpause_queue POST /alerts/send_test_alert"
+            credits.write: POST /credits/roll
+            profiles.write: GET /alert_profiles/get POST /alert_profiles/activate
+            jar.write: POST /jar/empty
+            wheel.write: POST /wheel/spin
+            mediashare.control:
+              PUT media-share/play-media PUT media-share/pause-media
+              PUT media-share/volume-up PUT media-share/volume-down PUT media-share/skip-video
+              PUT media-share/playback-video PUT media-share/enable-requests PUT media-share/disable-requests
+              PUT media-share/enable-autoplay PUT media-share/disable-autoplay PUT
+              media-share/enable-autoshow PUT media-share/disable-autoshow PUT media-share/enable-moderation
+              PUT media-share/disable-moderation PUT media-share/enable-backup PUT
+              media-share/disable-backup
+          tokenUrl: /api/v1.0/token?grant_type=authorization_code
+      type: oauth2
